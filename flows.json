@@ -1,0 +1,484 @@
+[
+    {
+        "id": "3a29e3ed72de9ea8",
+        "type": "tab",
+        "label": "Lectura datos EMQX",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "e1c36ee2c6a09bf1",
+        "type": "group",
+        "z": "3a29e3ed72de9ea8",
+        "name": "Configuracion de los sensores en variables globales",
+        "style": {
+            "stroke": "#0070c0",
+            "fill": "#bfdbef",
+            "label": true,
+            "label-position": "sw",
+            "color": "#0070c0"
+        },
+        "nodes": [
+            "4ec3ad7f438056a2",
+            "036dc3bc3d44b001",
+            "45dd2329b71a3caa",
+            "781124ea17d82c9e",
+            "cbc2e9c91a7401be",
+            "d99b9b3775832303",
+            "169ccd8952b4ee10",
+            "882b6069735e7498",
+            "3f4a71825cc1c5e5",
+            "1d814cebbc795150",
+            "a0f3b495a24668ed"
+        ],
+        "x": 214,
+        "y": 159,
+        "w": 632,
+        "h": 250
+    },
+    {
+        "id": "84a5ab97a9f79398",
+        "type": "mqtt in",
+        "z": "3a29e3ed72de9ea8",
+        "name": "Datos EMQX TLS",
+        "topic": "humedapp/sensores",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "d15dc3defc79b730",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 310,
+        "y": 100,
+        "wires": [
+            [
+                "af3597da95732018",
+                "036dc3bc3d44b001",
+                "bf427ef49783c97e"
+            ]
+        ]
+    },
+    {
+        "id": "af3597da95732018",
+        "type": "debug",
+        "z": "3a29e3ed72de9ea8",
+        "name": "debug 18",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 540,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "865c766300e36f0f",
+        "type": "debug",
+        "z": "3a29e3ed72de9ea8",
+        "name": "debug 19",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "4ec3ad7f438056a2",
+        "type": "function",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "calidad",
+        "func": "// 1. Extrae el valor de altitud\n//msg.payload = msg.payload.calidad;\n\n// 2. Convierte el string a número decimal (float)\n//msg.payload = parseFloat(msg.payload);\n\n// 3. Define el topic\n//msg.topic = \"calidad\";\n\n//return msg;\n\n\nmsg.payload = msg.payload.calidad;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 360,
+        "wires": [
+            [
+                "1d814cebbc795150"
+            ]
+        ]
+    },
+    {
+        "id": "036dc3bc3d44b001",
+        "type": "json",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "Parse JSON",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 255,
+        "y": 280,
+        "wires": [
+            [
+                "45dd2329b71a3caa",
+                "781124ea17d82c9e",
+                "cbc2e9c91a7401be",
+                "4ec3ad7f438056a2",
+                "a0f3b495a24668ed",
+                "3ad9d795f5508cf1"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "45dd2329b71a3caa",
+        "type": "function",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "ph",
+        "func": "// 1. Extrae el valor usando el nombre correcto 'ph'\nmsg.payload = msg.payload.ph;\n\n// 2. Convierte el string a número decimal (float)\nmsg.payload = parseFloat(msg.payload);\n\n// 3. Asigna el topic\nmsg.topic = \"ph\";\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 240,
+        "wires": [
+            [
+                "169ccd8952b4ee10"
+            ]
+        ]
+    },
+    {
+        "id": "781124ea17d82c9e",
+        "type": "function",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "tds",
+        "func": "// 1. Extrae el valor de humedad (Ej: de \"65.3\")\nmsg.payload = msg.payload.tds;\n\n// 2. Convierte el string a número decimal (float)\nmsg.payload = parseFloat(msg.payload);\n\n// 3. Define el topic\nmsg.topic = \"tds\";\n\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 280,
+        "wires": [
+            [
+                "882b6069735e7498"
+            ]
+        ]
+    },
+    {
+        "id": "cbc2e9c91a7401be",
+        "type": "function",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "ntu",
+        "func": "// 1. Extrae el valor usando el nombre correcto 'gas_kohms'\nmsg.payload = msg.payload.ntu;\n\n// 2. Convierte el string a número decimal (float)\nmsg.payload = parseFloat(msg.payload);\n\n// 3. Asigna el topic\nmsg.topic = \"ntu\";\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 320,
+        "wires": [
+            [
+                "3f4a71825cc1c5e5"
+            ]
+        ]
+    },
+    {
+        "id": "d99b9b3775832303",
+        "type": "change",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "TEMP",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 710,
+        "y": 200,
+        "wires": [
+            [
+                "865c766300e36f0f",
+                "2fdcc4bba812d49f"
+            ]
+        ]
+    },
+    {
+        "id": "169ccd8952b4ee10",
+        "type": "change",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "PH",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 690,
+        "y": 240,
+        "wires": [
+            [
+                "865c766300e36f0f",
+                "9874db2732f941eb"
+            ]
+        ]
+    },
+    {
+        "id": "882b6069735e7498",
+        "type": "change",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "TDS",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 700,
+        "y": 280,
+        "wires": [
+            [
+                "865c766300e36f0f",
+                "f5bad39a5e1255e8"
+            ]
+        ]
+    },
+    {
+        "id": "3f4a71825cc1c5e5",
+        "type": "change",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "NTU",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 700,
+        "y": 320,
+        "wires": [
+            [
+                "865c766300e36f0f",
+                "73902c654eb47a66"
+            ]
+        ]
+    },
+    {
+        "id": "1d814cebbc795150",
+        "type": "change",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "CALIDAD",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 720,
+        "y": 360,
+        "wires": [
+            [
+                "865c766300e36f0f"
+            ]
+        ]
+    },
+    {
+        "id": "a0f3b495a24668ed",
+        "type": "function",
+        "z": "3a29e3ed72de9ea8",
+        "g": "e1c36ee2c6a09bf1",
+        "name": "Temperatura",
+        "func": "// 1. Extrae el valor usando el nombre correcto 'presion_hpa'\nmsg.payload = msg.payload.temperatura; \n\n// 2. Convierte el string a número decimal (float)\nmsg.payload = parseFloat(msg.payload);\n\n// 3. Asigna el topic\nmsg.topic = \"temperatura\";\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 200,
+        "wires": [
+            [
+                "d99b9b3775832303"
+            ]
+        ]
+    },
+    {
+        "id": "2fdcc4bba812d49f",
+        "type": "link out",
+        "z": "3a29e3ed72de9ea8",
+        "name": "OUT TEMP",
+        "mode": "link",
+        "links": [],
+        "x": 955,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "9874db2732f941eb",
+        "type": "link out",
+        "z": "3a29e3ed72de9ea8",
+        "name": "OUT PH",
+        "mode": "link",
+        "links": [],
+        "x": 955,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "f5bad39a5e1255e8",
+        "type": "link out",
+        "z": "3a29e3ed72de9ea8",
+        "name": "OUT TDS",
+        "mode": "link",
+        "links": [],
+        "x": 955,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "73902c654eb47a66",
+        "type": "link out",
+        "z": "3a29e3ed72de9ea8",
+        "name": "OUT NTU",
+        "mode": "link",
+        "links": [],
+        "x": 955,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "bf427ef49783c97e",
+        "type": "link out",
+        "z": "3a29e3ed72de9ea8",
+        "d": true,
+        "name": "OUT JSON INFLUXDB",
+        "mode": "link",
+        "links": [],
+        "x": 455,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "3ad9d795f5508cf1",
+        "type": "link out",
+        "z": "3a29e3ed72de9ea8",
+        "name": "OUT JSON",
+        "mode": "link",
+        "links": [
+            "16eb628efca906b5",
+            "0875dd37c704f74f"
+        ],
+        "x": 345,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "d15dc3defc79b730",
+        "type": "mqtt-broker",
+        "name": "Datos BME680 TLS",
+        "broker": "sc181421.ala.us-east-1.emqxsl.com",
+        "port": "8883",
+        "tls": "42dbd68caf70e515",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": true,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "telemetria/bme680",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "42dbd68caf70e515",
+        "type": "tls-config",
+        "name": "EMQX TLS",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "i1328038.ala.us-east-1.emqxsl.com",
+        "verifyservercert": true,
+        "alpnprotocol": ""
+    }
+]
