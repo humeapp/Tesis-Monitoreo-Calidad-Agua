@@ -1,0 +1,229 @@
+#define TINY_GSM_MODEM_SIM7070
+
+#include <TinyGsmClient.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
+#include <Arduino.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+// --- Serial ---
+#define SerialMon Serial
+#define SerialAT Serial1
+
+// --- Pines módem ---
+#define MODEM_TX 27
+#define MODEM_RX 26
+#define MODEM_PWRKEY 4
+
+// --- APN ---
+const char apn[] = "internet.movistar.com.co";
+const char gprsUser[] = "";
+const char gprsPass[] = "";
+
+// --- MQTT ---
+const char *broker = "i1328038.ala.us-east-1.emqxsl.com";
+const int port = 8883;
+const char *mqttUser = "telemetria";
+const char *mqttPass = "Telemetria1";
+const char *topic = "telemetria/agua";
+
+// --- Objetos ---
+TinyGsm modem(SerialAT);
+TinyGsmClientSecure client(modem);
+PubSubClient mqtt(client);
+
+// --- Pines sensores ---
+#define PH_PIN 32
+#define TURBIDITY_PIN 39
+#define TDS_PIN 34
+#define ONE_WIRE_BUS 2
+
+// --- Config ---
+#define VREF 3.3
+#define SCOUNT 30
+
+// --- Temperatura ---
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+// --- Buffers ---
+int analogBuffer[SCOUNT];
+int analogBufferTemp[SCOUNT];
+
+// --- Calibración turbidez ---
+int ADC_clean = 4095;
+int ADC_dirty = 0;
+
+// --- Temporizador ---
+unsigned long ultimaLectura = 0;
+const unsigned long intervalo = 120000;
+
+// ----------- FUNCIONES -----------
+
+void powerOnModem() {
+  pinMode(MODEM_PWRKEY, OUTPUT);
+  digitalWrite(MODEM_PWRKEY, HIGH);
+  delay(100);
+  digitalWrite(MODEM_PWRKEY, LOW);
+  delay(1000);
+}
+
+void conectarMQTT() {
+  SerialMon.print("🔗 Conectando MQTT... ");
+  while (!mqtt.connect("SIM7070_Agua", mqttUser, mqttPass)) {
+    SerialMon.print(".");
+    delay(2000);
+  }
+  SerialMon.println("✅ Conectado!");
+}
+
+// --- Temperatura ---
+float readTemperature() {
+  sensors.requestTemperatures();
+  float t = sensors.getTempCByIndex(0);
+  if (t == DEVICE_DISCONNECTED_C) return -127;
+  return t;
+}
+
+// --- pH ---
+float readPH() {
+  int adc = analogRead(PH_PIN);
+  float voltage = adc * (3.3 / 4095.0);
+  return 7 + ((2.5 - voltage) / 0.18);
+}
+
+// --- Turbidez ---
+float adcToNTU(int adc) {
+  float ntu = (ADC_clean - adc) * (3000.0 / (ADC_clean - ADC_dirty));
+  if (ntu < 0) ntu = 0;
+  return ntu;
+}
+
+String clasificacionNSF(float ntu) {
+  if (ntu <= 5) return "Optimo";
+  else if (ntu <= 25) return "Bueno";
+  else if (ntu <= 100) return "Aceptable";
+  else return "Deficiente";
+}
+
+// --- TDS ---
+int getMedianNum(int bArray[], int len) {
+  int bTab[len];
+
+  for (int i = 0; i < len; i++) bTab[i] = bArray[i];
+
+  for (int j = 0; j < len - 1; j++) {
+    for (int i = 0; i < len - j - 1; i++) {
+      if (bTab[i] > bTab[i + 1]) {
+        int temp = bTab[i];
+        bTab[i] = bTab[i + 1];
+        bTab[i + 1] = temp;
+      }
+    }
+  }
+
+  if (len % 2) return bTab[(len - 1) / 2];
+  else return (bTab[len / 2] + bTab[len / 2 - 1]) / 2;
+}
+
+float readTDS(float temp) {
+
+  for (int i = 0; i < SCOUNT; i++) {
+    analogBuffer[i] = analogRead(TDS_PIN);
+    delay(10);
+  }
+
+  for (int i = 0; i < SCOUNT; i++) {
+    analogBufferTemp[i] = analogBuffer[i];
+  }
+
+  float avgVoltage = getMedianNum(analogBufferTemp, SCOUNT) * VREF / 4095.0;
+
+  float compCoef = 1.0 + 0.02 * (temp - 25.0);
+  float compVolt = avgVoltage / compCoef;
+
+  float tds = (133.42 * pow(compVolt, 3)
+              - 255.86 * pow(compVolt, 2)
+              + 857.39 * compVolt) * 0.5;
+
+  return tds;
+}
+
+// ----------- SETUP -----------
+
+void setup() {
+  SerialMon.begin(115200);
+  delay(2000);
+
+  SerialMon.println("⚡ Iniciando sistema...");
+  powerOnModem();
+
+  SerialAT.begin(115200, SERIAL_8N1, MODEM_RX, MODEM_TX);
+  delay(3000);
+
+  modem.restart();
+
+  modem.sendAT("+CNMP=38");
+  modem.waitResponse();
+  modem.sendAT("+CMNB=1");
+  modem.waitResponse();
+  modem.sendAT("+COPS=0");
+  modem.waitResponse();
+
+  SerialMon.println("🌐 Conectando red...");
+  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+    SerialMon.println("❌ Error LTE");
+    while (true);
+  }
+
+  SerialMon.println("✅ LTE conectado");
+
+  sensors.begin();
+
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
+
+  mqtt.setServer(broker, port);
+  mqtt.setKeepAlive(60);
+
+  conectarMQTT();
+}
+
+// ----------- LOOP -----------
+
+void loop() {
+
+  if (!mqtt.connected()) conectarMQTT();
+  mqtt.loop();
+
+  unsigned long ahora = millis();
+
+  if (ahora - ultimaLectura >= intervalo) {
+    ultimaLectura = ahora;
+
+    float temp = readTemperature();
+    float ph = readPH();
+
+    int turbADC = analogRead(TURBIDITY_PIN);
+    float ntu = adcToNTU(turbADC);
+    String calidad = clasificacionNSF(ntu);
+
+    float tds = readTDS(temp);
+
+    // --- JSON ---
+    DynamicJsonDocument doc(256);
+
+    doc["temperatura"] = String(temp, 2);
+    doc["ph"] = String(ph, 2);
+    doc["tds"] = String(tds, 0);
+    doc["ntu"] = String(ntu, 1);
+    doc["calidad"] = calidad;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    mqtt.publish(topic, payload.c_str());
+    SerialMon.println(payload);
+  }
+}
